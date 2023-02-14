@@ -1,7 +1,6 @@
 const express = require("express");
 const cors = require("cors");
 const database = require("./database");
-const { comparePassword } = require("./hashing");
 
 
 const app = express();
@@ -21,9 +20,10 @@ app.post("/api/v1/signup", (req, res) => {
 
 app.get("/api/v1/signin", (req, res) => {
   database.findUser(req.body.email).then((user) => {
-      // if (user == null) return null;
-      // if(comparePassword(req.body.password, user.password))
-        res.send({ token : ''}) // todo
+  console.log(user);
+  if (user == null)
+    res.status(404).send('user not found');
+  else
+    res.send({ token : ''}) // todo
   });
 });
-

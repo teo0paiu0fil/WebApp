@@ -1,5 +1,4 @@
 const { MongoClient } = require("mongodb");
-const { cryptPassword } = require("./hashing");
 
 // secret .env on relese
 const URI =
@@ -13,11 +12,11 @@ module.exports.insertUser = async function insertUser(
   const client = new MongoClient(URI);
   const database = client.db("webapp");
   const users = database.collection("user");
-
+  
   const user = {
     _id: email,
     username: username,
-    password: cryptPassword(password),
+    hashpass: password
   };
 
   const exists = await module.exports.findUser(email);
@@ -31,7 +30,7 @@ module.exports.findUser = async function findUser(email) {
   const query = { _id: email };
 
   const options = {
-    projection: { _id: 1, username: 0, password: 1 },
+    projection: { _id: 1, username: 0, hashpass: 0 },
   };
 
   const user = await users.findOne(query, options);
