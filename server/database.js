@@ -1,8 +1,11 @@
 const { MongoClient } = require("mongodb");
+const bcrypt = require("bcrypt");
+const jwt = require('jsonwebtoken');
+require("dotenv").config();
 
 // secret .env on relese
-const URI =
-  "mongodb://localhost:27017/?readPreference=primary&ssl=false&directConnection=true";
+const URI = process.env.MONGO_URL;
+
 
 module.exports.insertUser = async function insertUser(
   email,
@@ -12,15 +15,34 @@ module.exports.insertUser = async function insertUser(
   const client = new MongoClient(URI);
   const database = client.db("webapp");
   const users = database.collection("user");
-  
+  var hashpass = await bcrypt
+    .genSalt(parseInt(process.env.SALT))
+    .then((salt) => {
+      return bcrypt.hash(password, salt);
+    }).then((hash) => {
+      return hash;
+    })
+    .catch((err) => console.error(err.message));
+
+  const token = jwt.sign(
+    { user_id: email},
+    process.env.TOKEN_SECRET,
+    {
+      expiresIn: "2h",
+    }
+  );
+
+
   const user = {
     _id: email,
     username: username,
-    hashpass: password
+    hashpass: hashpass,
+    token: token,
   };
 
   const exists = await module.exports.findUser(email);
   if (exists == null) await users.insertOne(user);
+  return user;
 };
 
 module.exports.findUser = async function findUser(email) {
@@ -29,11 +51,7 @@ module.exports.findUser = async function findUser(email) {
   const users = database.collection("user");
   const query = { _id: email };
 
-  const options = {
-    projection: { _id: 1, username: 0, hashpass: 0 },
-  };
-
-  const user = await users.findOne(query, options);
+  const user = await users.findOne(query);
 
   return user;
 };
