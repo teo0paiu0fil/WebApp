@@ -16,7 +16,7 @@ module.exports.insertUser = async function insertUser(
   const database = client.db("webapp");
   const users = database.collection("user");
   var hashpass = await bcrypt
-    .genSalt(parseInt(process.env.SALT))
+    .genSalt(parseInt(process.env.SALT || 9 ))
     .then((salt) => {
       return bcrypt.hash(password, salt);
     }).then((hash) => {
@@ -26,12 +26,11 @@ module.exports.insertUser = async function insertUser(
 
   const token = jwt.sign(
     { user_id: email},
-    process.env.TOKEN_SECRET,
+    process.env.TOKEN_SECRET || 'some secret',
     {
       expiresIn: "2h",
     }
   );
-
 
   const user = {
     _id: email,
